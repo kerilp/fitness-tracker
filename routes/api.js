@@ -2,10 +2,20 @@ const router = require('express').Router();
 const Workout = require('../models/Workout');
 
 router.get('/workouts', (req, res) => {
-    Workout.find({})
-        .sort({ date: -1 })
-        .then(dbWorkout => {
-            res.json(dbWorkout);
+    Workout.aggregate([
+        {
+            $set: {
+                totalDuration: {
+                    $sum: '$exercises.duration'
+                },
+                totalDistance: {
+                    $sum: '$exercises.distance'
+                }
+            }
+        }
+    ])
+        .then(data => {
+            res.json(data);
         })
         .catch(err => {
             res.status(400).json(err);
@@ -14,8 +24,8 @@ router.get('/workouts', (req, res) => {
 
 router.post('/workouts', (req, res) => {
     Workout.create(req.body)
-        .then(dbWorkout => {
-            res.json(dbWorkout);
+        .then(data => {
+            res.json(data);
         })
         .catch(err => {
             res.status(400).json(err);
@@ -23,15 +33,23 @@ router.post('/workouts', (req, res) => {
 });
 
 router.put('/workouts/:id', (req, res) => {
-    Workout.findByIdAndUpdate(req.params.id, { $push: { exercises: req.body } }, { new: true })
-        .then(dbWorkout => {
-            res.json(dbWorkout);
+    Workout.findByIdAndUpdate(req.params.id, { $push: { exercises: req.body } })
+        .then(data => {
+            res.json(data);
         })
         .catch(err => {
             res.status(400).json(err);
         });
 });
 
-// router.get('/')
+router.get('/workouts/range', (req, res) => {
+    Workout.find({ day: { $gt: new Date(new Date().setDate(new Date().getDate() - 7)), $lt: new Date() } })
+        .then(data => {
+            res.json(data);
+        })
+        .catch(err => {
+            res.status(400).json(err);
+        });
+});
 
 module.exports = router;
