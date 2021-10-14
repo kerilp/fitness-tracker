@@ -43,7 +43,12 @@ router.put('/workouts/:id', (req, res) => {
 });
 
 router.get('/workouts/range', (req, res) => {
-    Workout.find({ day: { $gt: new Date(new Date().setDate(new Date().getDate() - 7)), $lt: new Date() } })
+    Workout.aggregate([
+        { $set: { totalDuration: { $sum: '$exercises.duration' } } },
+        { $sort: { day: -1 } }
+    ])
+        .limit(7)
+        .sort({ day: 1 })
         .then(data => {
             res.json(data);
         })
